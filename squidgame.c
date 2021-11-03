@@ -1,0 +1,132 @@
+#include <stdio.h>
+#include<Windows.h>
+#include<conio.h>
+#include <stdbool.h>
+
+#define MAX_X 100
+#define MAX_Y 25
+
+
+void SetConsoleView()
+{
+    system("mode con:cols=100 lines=25");
+    system("title Squid Game");
+}
+
+void GotoXY(int x, int y)
+{
+    COORD Pos;
+    Pos.X = x;
+    Pos.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
+}
+
+
+void Drawit()
+{
+    GotoXY(75, 6);
+    printf("     / £þ£þ£þ ¡¬\n");
+    GotoXY(75, 7);
+    printf("    | //////// |\n");
+    GotoXY(75, 8);
+    printf("  ¡Ü| //////// |¡Ü\n");
+    GotoXY(75, 9);
+    printf("/   | //////// |  ¡¬\n");
+    GotoXY(75, 10);
+    printf("     ¡¬ ///// /\n");
+    GotoXY(75, 11);
+    printf("       £þ£þ£þ\n");
+    GotoXY(75, 12);
+    printf("     / £þ£þ£þ¡¬\n");
+    GotoXY(75, 13);
+    printf("     |  |  |  |\n");
+    GotoXY(75, 14);
+    printf("     |  |  |  |\n");
+    GotoXY(75, 15);
+    printf("     |  |  |  |\n");
+    GotoXY(75, 16);
+    printf("     £þ£þ£þ£þ£þ\n");
+    GotoXY(75, 17);
+    printf("    /          ¡¬\n");
+    GotoXY(75, 18);
+    printf("   |            |\n");
+    GotoXY(75, 19);
+    printf("   |            |\n");
+    GotoXY(75, 20);
+    printf("    £þ£þ£þ£þ£þ£þ\n");
+    GotoXY(75, 21);
+    printf("     |  | |  |\n");
+    GotoXY(75, 22);
+    printf("     |  | |  |\n");
+    GotoXY(75, 23);
+    printf("      £þ   £þ\n");
+}
+
+
+
+int main() {
+
+    SetConsoleView();
+
+    Drawit();
+    Sleep(80);
+
+    int X = 1;
+    int Y = MAX_Y / 2;
+    int site;
+
+
+
+    while (1) {
+
+        Drawit();
+        Sleep(80);
+
+        GotoXY(0, MAX_Y + 1);
+        GotoXY(X, Y);
+        printf("¡Ï");
+
+        site = _getch();
+
+        switch (site) {
+        case 224:                      // arrow keys
+
+            site = _getch();
+
+            switch (site) {
+            case 72:                   // top
+                if (Y != 0) {
+                    Y--;
+                }
+                break;
+
+            case 75:                   // left
+                if (X != 0) {
+                    X--;
+                }
+                break;
+
+            case 77:                   // right
+                if (X != MAX_X) {
+                    X++;
+                }
+                break;
+
+            case 80:                   // bottom
+                if (Y != MAX_Y) {
+                    Y++;
+                }
+                break;
+
+            default:
+                break;
+            }
+        default:
+            break;
+        }
+        system("cls");
+
+    }
+
+   
+}
