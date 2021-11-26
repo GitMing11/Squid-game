@@ -1,0 +1,677 @@
+#include <stdio.h>
+#include <Windows.h>
+#include<conio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <time.h>
+#include <mmsystem.h>
+#pragma comment(lib,"winmm.lib")
+
+
+#define UP 0
+#define DOWN 2
+#define ENTER 4
+
+#define HEIGHT  21          // 다리의 높이
+#define N  10               // 배열 크기
+#define L 3                 // life 개수
+
+#define MAX_X 100           // 콘솔창 크기
+#define MAX_Y 25
+
+int randArr[N] = { 0 };     // 난수 저장할 배열
+int count = 0;              // 배열 인덱스
+int life = L;               // life 개수 ( 0이 되면 게임오버 )
+bool win;                   // 이겼는지 확인해주는 변수 ( True면 이김 )
+int x, y;                   // goto함수에 쓰일 x, y
+
+
+// 이동 함수
+void gotoxy(int x, int y);
+
+// 시작화면
+int KeyControl();
+void TitleDraw();
+int MenuDraw();
+void InfoDraw();
+
+// 메인 - 징검다리 건너기
+void reset();
+void bridge();
+void lifePrint();
+void winOrLose();
+void choice();
+void random();
+int replay();
+void GameOver();
+
+// 개발중 - 무궁화 꽃이 피었습니다
+void SetConsoleView();
+void InfoDraw2();
+void Drawit();
+void Drawitf();
+void move();
+
+
+// *************************************************************************************
+// 시작화면
+
+
+
+// 이동 함수
+void gotoxy(int x, int y)  // x,y 좌표 사용
+{
+    COORD pos = { x,y };
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
+}
+
+
+// 게임 타이틀 출력
+void TitleDraw() {
+    system("mode con cols=100 lines=40 | title 오징어게임"); 
+
+    // 커서 없애기
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE); // 콘솔 핸들가져오기 
+    CONSOLE_CURSOR_INFO ConsoleCursor;
+    ConsoleCursor.bVisible = 0; // false 또는 0 : 숨기기 
+    ConsoleCursor.dwSize = 1;
+    SetConsoleCursorInfo(consoleHandle, &ConsoleCursor);
+
+
+    printf("\n\n\n\n\n\n\n\n");
+    printf("                        ■■■                               ■                  \n");
+    printf("                      ■      ■                     ■■    ■                ■\n");
+    printf("                    ■          ■              ■ ■    ■  ■         ■■   ■\n");
+    printf("                    ■          ■ ■■■■■■ ■ ■    ■■■       ■    ■ ■\n");
+    printf("                    ■          ■     ■■     ■   ■■    ■       ■    ■ ■\n");
+    printf("                      ■      ■      ■  ■    ■           ■         ■■   ■\n");
+    printf("                        ■■■       ■    ■   ■                               \n");
+    printf("                          ■        ■      ■            ■■■  ■ ■  ■■■■\n");
+    printf("                          ■       ■■■■■■■            ■   ■ ■  ■    ■\n");
+    printf("                    ■■■■■■           ■    ■         ■■■■ ■  ■    ■\n");
+    printf("                                           ■    ■        ■     ■ ■  ■■■■\n");
+    printf("                                             ■■         ■         ■          \n");
+    printf("\n\n\n\n\n");
+
+}
+
+
+
+// 게임 설명
+void InfoDraw() {
+    system("cls");
+    printf("\n");
+    gotoxy(47, 2); Sleep(300); printf("○"); gotoxy(47, 4);  Sleep(300); printf("·");
+    gotoxy(47, 6); Sleep(400); printf("△"); gotoxy(47, 8);  Sleep(400); printf("·");
+    gotoxy(47, 10); Sleep(500); printf("□"); gotoxy(47, 12);  Sleep(500); printf("·");
+    Sleep(500); gotoxy(35, 14); printf("이 자리에 오신 여러분들을");
+    Sleep(1000); gotoxy(38, 15); printf("진심으로 환영합니다");
+    Sleep(1500); gotoxy(42, 17); printf("이번 게임은");
+    Sleep(1000); gotoxy(37, 18); printf("징검다리 건너기 입니다");
+    Sleep(1000); gotoxy(29, 20); printf("참가자들은 앞에 놓인 한 쌍의 유리 중에");
+    Sleep(1000); gotoxy(32, 21); printf("어느 쪽이 강화유리인지 판단해서");
+    Sleep(1000); gotoxy(29, 22); printf("반대쪽까지 무사히 건너가면 통과입니다");
+
+    Sleep(1000); gotoxy(27, 24); printf("이 게임은 아래에서 위 방향으로 진행합니다");
+    Sleep(1000); gotoxy(29, 26); printf("강화유리는 랜덤으로 배치되어 있습니다");
+    Sleep(1000); gotoxy(29, 27); printf("강화유리를 고를 경우 ■의 색이 변하고");
+    Sleep(1000); gotoxy(23, 28); printf("일반유리를 고를 경우 　로 변하며 ♥를 하나 잃습니다");
+    Sleep(1000); gotoxy(39, 29); printf("처음 ♥는 %d개입니다", life);
+
+    Sleep(1000); gotoxy(27, 31); printf("한 쌍의 유리 중에서 왼쪽을 고르시려면 1,");
+    Sleep(1000); gotoxy(31, 32); printf("오른쪽을 고르시려면 2를 누르세요\n");
+
+    printf("\n\n\n [시작화면으로 가려면 ESC를 누르세요.]\n\n");
+}
+
+
+// 키 입력받기
+int KeyControl() {
+    int temp = _getch();
+    if (temp == 13) {                       // Enter
+        return ENTER;
+    }
+    else if (temp == 87 || temp == 119) {   //'W' or 'w'
+        return UP;
+    }
+    else if (temp == 83 || temp == 115) {   // 'S' or 's'
+        return DOWN;
+    }
+}
+
+
+// 메뉴
+int MenuDraw() {
+    
+    int x = 42;
+    int y = 26;
+
+    gotoxy(10, 26); printf("↑ : W");
+    gotoxy(10, 28); printf("↓ : S");
+    gotoxy(10, 30); printf("선택 : Enter");
+
+    gotoxy(x - 2, y);
+    printf(">> 게 임 시 작 <<");
+    gotoxy(x, y + 2);
+    printf(" 게 임 설 명 ");
+    gotoxy(x, y + 4);
+    printf(" 게 임 종 료 ");
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8);
+    gotoxy(x, y + 6);
+    printf(" 체 험 하 기 ");
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+    
+    while (1) {
+        int n = KeyControl();
+        switch (n) {
+            case UP:
+            {
+                if (y > 26) {
+                    gotoxy(x - 2, y);
+                    printf("  ");
+                    gotoxy(x + 13, y);
+                    printf("  ");
+                    gotoxy(x - 2, y -= 2);
+                    printf(">>");
+                    gotoxy(x + 13, y);
+                    printf("<<");
+                }
+                break;
+            }
+
+            case DOWN:
+            {
+                if (y < 32) {
+                    gotoxy(x - 2, y);
+                    printf("  ");
+                    gotoxy(x + 13, y);
+                    printf("  ");
+                    gotoxy(x - 2, y += 2);
+                    printf(">>");
+                    gotoxy(x + 13, y);
+                    printf("<<");
+                }
+                break;
+            }
+
+            case ENTER:
+            {
+                return y - 26;       
+            }
+        }
+    }
+}
+
+
+
+// *************************************************************************************
+// 메인 - 징검다리 건너기
+
+
+
+// 게임 초기화
+void reset() {
+    life = L;
+    count = 0;
+}
+
+
+
+// 다리 출력
+void bridge() {
+    printf("┌ ─ ┬ ─ ┐\n");
+    printf("│ ■│ ■│\n");
+    for (int i = 0; i < N - 1; i++) {
+        printf("├ ─ ┼ ─ ┤\n");
+        printf("│ ■│ ■│\n");
+    }
+    printf("└ ─ ┴ ─ ┘\n");
+}
+
+
+
+// 리플레이 or 시작화면 or 게임종료
+int replay() {
+    
+    while (1) {
+        int re = _getch();
+        if (re == 114 || re == 82) {  // r or R
+            return 1;
+        }
+        else if (re == 102 || re == 70) {  // f or F
+            return 2;
+        }
+        else if (re == 27) return 3;   // ESC
+        else continue;
+    }
+}
+
+
+
+// 게임 오버
+void GameOver() {
+
+    gotoxy(0, HEIGHT);
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+    printf("\n");
+    printf("\n");
+
+    if (win == true) {
+        printf("   ■■           ■■          ■■          ■■     ■■\n");
+        printf("   ■■           ■■          ■■          ■■     ■■\n");
+        printf("   ■■           ■■          ■■          ■■■   ■■\n");
+        printf("   ■■   ■■    ■■          ■■          ■■■■ ■■\n");
+        printf("   ■■   ■■    ■■          ■■          ■■   ■■■\n");
+        printf("   ■■   ■■    ■■          ■■          ■■     ■■\n");
+        printf("      ■■     ■■             ■■          ■■     ■■\n");
+    }
+
+    else {
+        printf("   ■■                   ■■■■             ■■■■          ■■■■■■\n");
+        printf("   ■■                ■■      ■■       ■■      ■■       ■■    ■■\n");
+        printf("   ■■                ■■      ■■       ■■                 ■■\n");
+        printf("   ■■                ■■      ■■          ■■■■          ■■■■■\n");
+        printf("   ■■                ■■      ■■                 ■■       ■■\n");
+        printf("   ■■  ■■          ■■      ■■       ■■      ■■       ■■    ■■\n");
+        printf("   ■■■■■             ■■■■             ■■■■          ■■■■■■\n");
+    }
+
+    printf("\n\n\n\n");
+    printf(" [다시하려면 R을 누르세요.]\n\n");
+    printf(" [시작화면으로 가려면 F를 누르세요.]\n\n");
+    printf(" [종료하려면 ESC를 누르세요.]\n");
+
+
+}
+
+
+
+// LIFE 표시
+void lifePrint()
+{
+
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+
+    gotoxy(20, 1);
+    if (life >= 4) {
+        printf("♥ x %d", life);
+    }
+    else if (life == 3) {
+        printf("♥♥♥");
+    }
+    else if (life == 2) {
+        printf("♥♥♡");
+    }
+    else if (life == 1) {
+        printf("♥♡♡");
+    }
+    else printf("♡♡♡");
+
+}
+
+
+// 승패여부 확인
+void winOrLose()
+{
+
+    if (life == 0)             // 목숨이 0이면 짐
+    {
+        win = false;
+        return;
+    }
+    else if (count == N)      // 10번 모두 맞으면 이김
+    {
+        win = true;
+        return;
+    }
+
+}
+
+
+
+// 난수 생성 후 배열 삽입
+void random()
+{
+    srand((unsigned int)time(NULL));   // 난수 생성
+
+    for (int i = 0; i < 10; i++)
+    {
+        int n = rand();
+        randArr[i] = (int)n % 2 + 1;   // 1 or 2
+    }                                 
+
+}
+
+
+
+// 다리 선택
+void choice()
+{
+    int step = 1;  // 1단계 ~ 10단계, 다리 선택 단계
+    int num = 0;   //1(왼쪽) 또는 2(오른쪽) 다리 선택 변수
+    int x1 = 2, x2 = 6, y = HEIGHT - 2;
+
+    gotoxy(20, 3);
+    printf("1 또는 2를 고르세요\n");
+
+    int randint = randArr[count];
+
+    while (count < N)         
+    {                         
+
+        lifePrint();                 // LIFE 출력
+        if (life == 0) return;       
+
+        gotoxy(20, step + 4);
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+
+        printf("%d 단계 : ", step);
+        scanf_s("%d", &num);
+
+        switch (num) {
+        case 1:
+            gotoxy(x1, y);
+            if (randint == 1) {
+                SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5);
+                printf("■\n");
+            }
+            else {
+                printf("　\n");
+                life--;
+            }
+
+            gotoxy(30 + step / 10, step + 4);
+            printf("                         ");
+
+            y -= 2;
+            step++;
+            count++;
+            break;
+
+        case 2:
+            gotoxy(x2, y);
+            if (randint == 2) {
+                SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5);
+                printf("■\n");
+            }
+            else {
+                printf("　\n");
+                life--;
+            }
+
+            gotoxy(30, step + 4);
+            printf("                       ");
+
+            y -= 2;
+            step++;
+            count++;
+            break;
+
+        default:
+            num = getchar();
+
+            printf("\a");
+            gotoxy(32, step + 4);
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
+            printf("※ 잘못된 입력입니다.\n");
+            break;
+        }
+        if (count < N) randint = randArr[count];  
+        lifePrint();      // LIFE 출력
+    }
+}
+
+
+// *************************************************************************************
+// 개발중 - 무궁화 꽃이 피었습니다
+
+
+
+// 콘솔창 설정, 커서 없애기
+void SetConsoleView()
+{
+    system("mode con:cols=100 lines=25 | title 오징어게임");
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE); // 콘솔 핸들가져오기
+    CONSOLE_CURSOR_INFO ConsoleCursor;
+    ConsoleCursor.bVisible = 0; // false 또는 0 : 숨기기
+    ConsoleCursor.dwSize = 1;
+    SetConsoleCursorInfo(consoleHandle, &ConsoleCursor);
+
+}
+
+
+
+// 게임 설명
+void InfoDraw2() {
+    system("cls");
+    printf("\n");
+    gotoxy(47, 2); Sleep(300); printf("●"); gotoxy(47, 4);  Sleep(300); printf("·");
+    gotoxy(47, 6); Sleep(400); printf("▲"); gotoxy(47, 8);  Sleep(400); printf("·");
+    gotoxy(47, 10); Sleep(500); printf("■"); gotoxy(47, 12);  Sleep(500); printf("·");
+
+    Sleep(1500); gotoxy(42, 14); printf("이번 게임은");
+    Sleep(1000); gotoxy(33, 15); printf("무궁화 꽃이 피었습니다 입니다");
+
+    Sleep(1500); gotoxy(40, 17); printf("[ 조 작 방 법 ]");
+    Sleep(1000); gotoxy(26, 18); printf("방향키(↑←↓→)를 이용해 이동할 수 있습니다");
+    Sleep(1500); gotoxy(40, 20); printf("[ 주 의 사 항 ]");
+    Sleep(1000); gotoxy(28, 21); printf("개발중인 게임으로 현재 이동만 가능합니다");
+
+    Sleep(1000); system("cls");
+}
+
+
+
+// 술래 출력
+void Drawit() {
+
+    gotoxy(75, 6);
+    printf("     / ￣￣￣ ＼\n");
+    gotoxy(75, 7);
+    printf("    | //////// |\n");
+    gotoxy(75, 8);
+    printf("  ●| //////// |●\n");
+    gotoxy(75, 9);
+    printf("/   | //////// |  ＼\n");
+    gotoxy(75, 10);
+    printf("     ＼ ///// /\n");
+    gotoxy(75, 11);
+    printf("       ￣￣￣\n");
+    gotoxy(75, 12);
+    printf("     / ￣￣￣＼\n");
+    gotoxy(75, 13);
+    printf("     |  |  |  |\n");
+    gotoxy(75, 14);
+    printf("     |  |  |  |\n");
+    gotoxy(75, 15);
+    printf("     |  |  |  |\n");
+    gotoxy(75, 16);
+    printf("     ￣￣￣￣￣\n");
+    gotoxy(75, 17);
+    printf("    /          ＼\n");
+    gotoxy(75, 18);
+    printf("   |            |\n");
+    gotoxy(75, 19);
+    printf("   |            |\n");
+    gotoxy(75, 20);
+    printf("    ￣￣￣￣￣￣\n");
+    gotoxy(75, 21);
+    printf("     |  | |  |\n");
+    gotoxy(75, 22);
+    printf("     |  | |  |\n");
+    gotoxy(75, 23);
+    printf("      ￣   ￣\n");
+}
+
+
+// 술래 앞모습
+void Drawitf() {
+
+    gotoxy(75, 6);
+    printf("     / ￣￣￣ ＼\n");
+    gotoxy(75, 7);
+    printf("    | //////// | \n");
+    gotoxy(75, 8);
+    printf(" ● | ￣￣￣￣ | ●\n");
+    gotoxy(75, 9);
+    printf("/   | ○    ○ |   ＼ \n");
+    gotoxy(75, 10);
+    printf("    ＼  └┘    / \n");
+    gotoxy(75, 11);
+    printf("       ￣￣￣\n");
+    gotoxy(75, 12);
+    printf("     / ￣￣￣＼\n");
+    gotoxy(75, 13);
+    printf("     |  |  |  |\n");
+    gotoxy(75, 14);
+    printf("     |  |  |  |\n");
+    gotoxy(75, 15);
+    printf("     |  |  |  |\n");
+    gotoxy(75, 16);
+    printf("     ￣￣￣￣￣\n");
+    gotoxy(75, 17);
+    printf("    /          ＼\n");
+    gotoxy(75, 18);
+    printf("   |            |\n");
+    gotoxy(75, 19);
+    printf("   |            |\n");
+    gotoxy(75, 20);
+    printf("    ￣￣￣￣￣￣\n");
+    gotoxy(75, 21);
+    printf("     |  | |  |\n");
+    gotoxy(75, 22);
+    printf("     |  | |  |\n");
+    gotoxy(75, 23);
+    printf("      ￣   ￣\n");
+}
+
+
+// 캐릭터 이동
+void move() {
+    int X = 1;
+    int Y = MAX_Y / 2;
+    int site;
+
+    while (1) {
+
+        Drawit();
+        Sleep(80);
+
+        gotoxy(0, MAX_Y + 1);
+        gotoxy(X, Y);
+        printf("♀");
+
+        site = _getch();
+        if (site == 27) break;
+
+        switch (site) {
+        case 224:                      // arrow keys
+
+            site = _getch();
+            if (site == 27) return;
+
+            switch (site) {
+            case 72:                   // top
+                if (Y != 0) {
+                    Y--;
+                }
+                break;
+
+            case 75:                   // left
+                if (X != 0) {
+                    X--;
+                }
+                break;
+
+            case 77:                   // right
+                if (X != MAX_X) {
+                    X++;
+                }
+                break;
+
+            case 80:                   // bottom
+                if (Y != MAX_Y) {
+                    Y++;
+                }
+                break;
+
+            default:
+                break;
+            }
+        default:
+            break;
+        }
+        system("cls");
+
+    }
+
+}
+
+
+// *************************************************************************************
+// main 
+
+
+
+int main() {
+
+    while (1) {
+        TitleDraw();                    // 시작화면
+        int menuKey = MenuDraw();       
+
+        while (1) {
+
+            if (menuKey == 0) {         // 게임시작
+                system("cls");
+                reset();
+                bridge();
+                random();
+                choice();
+                winOrLose();
+                GameOver();
+                int re = replay();
+
+                if (re == 1) {
+                    continue;
+                } 
+                else if (re == 2) break;
+                else if (re == 3) {
+                    menuKey = 4;
+                }
+            }
+
+            else if (menuKey == 2) {    // 게임설명
+                InfoDraw();
+
+                while (1) {
+                    int start = _getch();
+                    if (start == 27) break;
+                }break;
+            }
+
+            else if (menuKey == 4) {    // 게임종료
+                system("cls");
+                return 0; 
+            }
+
+            else if (menuKey == 6) {
+                SetConsoleView();
+                InfoDraw2();
+                printf("\n  [시작화면으로 가려면 ESC를 누르세요.]\n\n");
+
+
+                Drawit();
+                Sleep(80);
+
+                PlaySound(TEXT("sound.wav"), NULL, SND_ASYNC | SND_LOOP);
+
+                move();
+
+                break;
+            }
+        }
+    }
+    system("cls");
+    return 0;
+}
