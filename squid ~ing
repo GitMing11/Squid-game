@@ -25,19 +25,19 @@ void GotoXY(int x, int y)
 void Drawit()
 {
     GotoXY(75, 6);
-    printf("     / £ş£ş£ş ¡¬\n");
+    printf("     / Â£Ã¾Â£Ã¾Â£Ã¾ Â¡Â¬\n");
     GotoXY(75, 7);
     printf("    | //////// |\n");
     GotoXY(75, 8);
-    printf("  ¡Ü| //////// |¡Ü\n");
+    printf("  Â¡Ãœ| //////// |Â¡Ãœ\n");
     GotoXY(75, 9);
-    printf("/   | //////// |  ¡¬\n");
+    printf("/   | //////// |  Â¡Â¬\n");
     GotoXY(75, 10);
-    printf("     ¡¬ ///// /\n");
+    printf("     Â¡Â¬ ///// /\n");
     GotoXY(75, 11);
-    printf("       £ş£ş£ş\n");
+    printf("       Â£Ã¾Â£Ã¾Â£Ã¾\n");
     GotoXY(75, 12);
-    printf("     / £ş£ş£ş¡¬\n");
+    printf("     / Â£Ã¾Â£Ã¾Â£Ã¾Â¡Â¬\n");
     GotoXY(75, 13);
     printf("     |  |  |  |\n");
     GotoXY(75, 14);
@@ -45,21 +45,21 @@ void Drawit()
     GotoXY(75, 15);
     printf("     |  |  |  |\n");
     GotoXY(75, 16);
-    printf("     £ş£ş£ş£ş£ş\n");
+    printf("     Â£Ã¾Â£Ã¾Â£Ã¾Â£Ã¾Â£Ã¾\n");
     GotoXY(75, 17);
-    printf("    /          ¡¬\n");
+    printf("    /          Â¡Â¬\n");
     GotoXY(75, 18);
     printf("   |            |\n");
     GotoXY(75, 19);
     printf("   |            |\n");
     GotoXY(75, 20);
-    printf("    £ş£ş£ş£ş£ş£ş\n");
+    printf("    Â£Ã¾Â£Ã¾Â£Ã¾Â£Ã¾Â£Ã¾Â£Ã¾\n");
     GotoXY(75, 21);
     printf("     |  | |  |\n");
     GotoXY(75, 22);
     printf("     |  | |  |\n");
     GotoXY(75, 23);
-    printf("      £ş   £ş\n");
+    printf("      Â£Ã¾   Â£Ã¾\n");
 }
 
 
@@ -84,7 +84,7 @@ int main() {
 
         GotoXY(0, MAX_Y + 1);
         GotoXY(X, Y);
-        printf("¡Ï");
+        printf("Â¡Ã");
 
         site = _getch();
 
